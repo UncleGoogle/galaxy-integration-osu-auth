@@ -1,3 +1,4 @@
+import os
 import pathlib
 import json
 import urllib
@@ -12,9 +13,11 @@ app = Flask(__name__)
 
 # # with open(pathlib.Path(__file__).parent / '.app_credentials') as f:
 # #     CLIENT_SECRET = f.read().strip()
+CLIENT_SECRET = os.environ['OSU_CLIENT_SECET']
+
 CLIENT_ID = 929
-CLIENT_SECRET = 'dev'
 THIS_HOST = 'http://127.0.0.1:5000'
+REDIRECT_PART = '/redirect'
 
 
 @app.route('/')
@@ -28,37 +31,48 @@ def redirected():
     return "Going back to galaxy-integration-osu"
 
 
-@app.route("/redirect_osu")
-def redirected_osu():
-    print('not here dude with args: ', request.args)
-    return "Not here dude :("
+@app.route('/auth')
+def auth():
+    token = request.args.get('refresh_token')
+    if token is not None:
+        return "Finish. GOG Galaxy CEF should be closed"
 
-
-@app.route('/auth', methods = ['POST'])
-def user():
     code = request.args.get('code')
+    print('code accepted')
     if code is None:
         return 'No code were given. Fail'
+
     try:
         response = do_auth(code)
     except Exception as e:
         return 'An error has ocurred: ' + repr(e)
-    refresh = response['refresh']
-    # qs = urllib.parse.urlencode(response)  # all stuff
-    print('after auth')
-    return redirect(f'/redirect?refresh_token={refresh}')
+    print(response.text)
+    qs = urllib.parse.urlencode(response)
+    return redirect(f'/auth?{qs}')
 
 
 def do_auth(code):
+    """
+    Response has form:
+    {
+        "token_type":"Bearer",
+        "expires_in":86400,  # token lifetime 24h
+        "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5MjkiLCJqdGkiOiIzYThlZWZkYjA2YTc2ZTgxOWNmYjAyNTY5Y2EzYzA0ZWFiZDdkM2I3N2U4NzU1MTZmNTJkMWIyY2I1OTlhMzJmM2I4MjVmNzcyYTA1ODhlYyIsImlhdCI6MTU4NjExOTk3NSwibmJmIjoxNTg2MTE5OTc1LCJleHAiOjE1ODYyMDYzNzUsInN1YiI6IjE2NTE3MTE2Iiwic2NvcGVzIjpbImlkZW50aWZ5Il19.xxx",
+        "refresh_token":"xxxxx"
+    }
+    decoded from token JWT: {'sub': 16517116}  # is it user id?
+    """
+    print('doing auth!')
     params = {
         'grant_type': 'authorization_code',
         'code': code,
         'client_id': CLIENT_ID,
         'client_secret': CLIENT_SECRET,
-        'redirect_uri': THIS_HOST + '/redirect_osu'
+        'redirect_uri': THIS_HOST + '/auth'
     }
+    print(params)
     url = 'http://osu.ppy.sh/oauth/token'
-    response = requests.post(url, params=params)
+    response = requests.post(url, data=params)
     response.raise_for_status()
     return json.loads(response.text)
 
