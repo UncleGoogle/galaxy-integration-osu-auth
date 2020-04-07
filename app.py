@@ -4,7 +4,6 @@ import json
 import urllib
 
 import requests
-import yarl
 from flask import Flask, redirect, request
 
 
@@ -17,21 +16,15 @@ CLIENT_SECRET = os.environ['OSU_CLIENT_SECET']
 
 CLIENT_ID = 929
 THIS_HOST = 'http://127.0.0.1:5000'
-REDIRECT_PART = '/redirect'
+AUTH_OSU = '/auth/osu'
 
 
 @app.route('/')
 def hello():
-    return 'Hello, World!'
+    return 'This host serves for GOG Galaxy plugins authentication'
 
 
-@app.route("/redirect")
-def redirected():
-    print('redirected back with args: ', request.args)
-    return "Going back to galaxy-integration-osu"
-
-
-@app.route('/auth')
+@app.route(AUTH_OSU)
 def auth():
     token = request.args.get('refresh_token')
     if token is not None:
@@ -43,21 +36,22 @@ def auth():
         return 'No code were given. Fail'
 
     try:
-        response = do_auth(code)
+        response = osu_auth(code)
     except Exception as e:
         return 'An error has ocurred: ' + repr(e)
-    print(response.text)
+    print(response)
     qs = urllib.parse.urlencode(response)
-    return redirect(f'/auth?{qs}')
+    print(qs)
+    return redirect(f'{AUTH_OSU}?{qs}')
 
 
-def do_auth(code):
+def osu_auth(code):
     """
     Response has form:
     {
         "token_type":"Bearer",
         "expires_in":86400,  # token lifetime 24h
-        "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5MjkiLCJqdGkiOiIzYThlZWZkYjA2YTc2ZTgxOWNmYjAyNTY5Y2EzYzA0ZWFiZDdkM2I3N2U4NzU1MTZmNTJkMWIyY2I1OTlhMzJmM2I4MjVmNzcyYTA1ODhlYyIsImlhdCI6MTU4NjExOTk3NSwibmJmIjoxNTg2MTE5OTc1LCJleHAiOjE1ODYyMDYzNzUsInN1YiI6IjE2NTE3MTE2Iiwic2NvcGVzIjpbImlkZW50aWZ5Il19.xxx",
+        "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5MjkiLCJqdGkiOiIzYThlZWZkYjA2YTc2ZTgxOWNmYjAyNTY5Y2EzYzA0ZWFiZDdkM2I3N2U4NzU1MTZmNTJkMWIyY2I1OTlhMzJmM2I4MjVmNzcyYTB1ODhlYyIsImlhdCI6MTU4NjExOTk3NSwibmJmIjoxNTg2MTE5OTc1LCJleHAiOjE1ODYyMDYzNzUsInN1YiI6IjE2NTE3MTE2Iiwic2NvcGVzIjpbImlkZW50aWZ5Il19.xxx",
         "refresh_token":"xxxxx"
     }
     decoded from token JWT: {'sub': 16517116}  # is it user id?
@@ -68,13 +62,13 @@ def do_auth(code):
         'code': code,
         'client_id': CLIENT_ID,
         'client_secret': CLIENT_SECRET,
-        'redirect_uri': THIS_HOST + '/auth'
+        'redirect_uri': THIS_HOST + AUTH_OSU
     }
-    print(params)
     url = 'http://osu.ppy.sh/oauth/token'
-    response = requests.post(url, data=params)
+    response = requests.post(url, json=params)
+    print(response.status_code)
     response.raise_for_status()
-    return json.loads(response.text)
+    return response.json()
 
 
 if __name__ == "__main__":
