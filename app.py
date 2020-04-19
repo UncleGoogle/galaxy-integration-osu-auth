@@ -15,7 +15,6 @@ app = Flask(__name__)
 CLIENT_SECRET = os.environ['OSU_CLIENT_SECET']
 
 CLIENT_ID = 929
-THIS_HOST = 'http://127.0.0.1:5000'
 AUTH_OSU = '/auth/osu'
 
 
@@ -62,7 +61,7 @@ def osu_auth(code):
         'code': code,
         'client_id': CLIENT_ID,
         'client_secret': CLIENT_SECRET,
-        'redirect_uri': THIS_HOST + AUTH_OSU
+        'redirect_uri': request.host_url.strip('/') + AUTH_OSU
     }
     url = 'http://osu.ppy.sh/oauth/token'
     response = requests.post(url, json=params)
