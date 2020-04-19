@@ -4,7 +4,7 @@ import json
 import urllib
 
 import requests
-from flask import Flask, redirect, request
+from flask import Flask, redirect, request, url_for
 
 
 app = Flask(__name__)
@@ -24,24 +24,24 @@ def hello():
 
 
 @app.route(AUTH_OSU)
-def auth():
+def auth_osu():
+    # TODO try to split functionality to 2 functions
+    # eg. osu redirects to '/auth/osu' then this function redirect to GALAXY_FINAL_URI
+    print('incoming url: ', request.url)
+
     token = request.args.get('refresh_token')
     if token is not None:
         return "Finish. GOG Galaxy CEF should be closed"
 
     code = request.args.get('code')
-    print('code accepted')
     if code is None:
         return 'No code were given. Fail'
 
     try:
-        response = osu_auth(code)
+        auth_params = osu_auth(code)
     except Exception as e:
         return 'An error has ocurred: ' + repr(e)
-    print(response)
-    qs = urllib.parse.urlencode(response)
-    print(qs)
-    return redirect(f'{AUTH_OSU}?{qs}')
+    return redirect(url_for('auth_osu', **auth_params))
 
 
 def osu_auth(code):
@@ -55,7 +55,7 @@ def osu_auth(code):
     }
     decoded from token JWT: {'sub': 16517116}  # is it user id?
     """
-    print('doing auth!')
+    print('Authorizing with code...')
     params = {
         'grant_type': 'authorization_code',
         'code': code,
