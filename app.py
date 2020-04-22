@@ -16,44 +16,42 @@ CLIENT_SECRET = os.environ['OSU_CLIENT_SECET']
 
 CLIENT_ID = 929
 AUTH_OSU = '/auth/osu'
+AUTH_OSU_FINAL = '/auth/osu/redirect'
 
 
 @app.route('/')
-def hello():
+def root():
     return 'This host serves for GOG Galaxy plugins authentication'
+
+
+@app.route(AUTH_OSU_FINAL)
+def auth_osu_final():
+    token = request.args.get('refresh_token')
+    print(token)
+    return "Finish. GOG Galaxy browser window should be closed"
 
 
 @app.route(AUTH_OSU)
 def auth_osu():
-    # TODO try to split functionality to 2 functions
-    # eg. osu redirects to '/auth/osu' then this function redirect to GALAXY_FINAL_URI
-    print('incoming url: ', request.url)
-
-    token = request.args.get('refresh_token')
-    if token is not None:
-        return "Finish. GOG Galaxy CEF should be closed"
-
     code = request.args.get('code')
     if code is None:
-        return 'No code were given. Fail'
-
+        return 'Error: No `code` received!'
     try:
         auth_params = osu_auth(code)
     except Exception as e:
-        return 'An error has ocurred: ' + repr(e)
-    return redirect(url_for('auth_osu', **auth_params))
+        return 'Error: ' + repr(e)
+    return redirect(url_for('auth_osu_final', **auth_params))
 
 
 def osu_auth(code):
-    """
-    Response has form:
+    """Exchanges oauth `code` to `access_token`. Exemplary response:
     {
         "token_type":"Bearer",
         "expires_in":86400,  # token lifetime 24h
         "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5MjkiLCJqdGkiOiIzYThlZWZkYjA2YTc2ZTgxOWNmYjAyNTY5Y2EzYzA0ZWFiZDdkM2I3N2U4NzU1MTZmNTJkMWIyY2I1OTlhMzJmM2I4MjVmNzcyYTB1ODhlYyIsImlhdCI6MTU4NjExOTk3NSwibmJmIjoxNTg2MTE5OTc1LCJleHAiOjE1ODYyMDYzNzUsInN1YiI6IjE2NTE3MTE2Iiwic2NvcGVzIjpbImlkZW50aWZ5Il19.xxx",
         "refresh_token":"xxxxx"
     }
-    decoded from token JWT: {'sub': 16517116}  # is it user id?
+    Decoded from token JWT: {'sub': 16517116}  # is it user id?
     """
     print('Authorizing with code...')
     params = {
