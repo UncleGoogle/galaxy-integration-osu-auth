@@ -7,16 +7,12 @@ import requests
 from flask import Flask, redirect, request, url_for
 
 
-app = Flask(__name__)
-
-
-# # with open(pathlib.Path(__file__).parent / '.app_credentials') as f:
-# #     CLIENT_SECRET = f.read().strip()
-CLIENT_SECRET = os.environ['OSU_CLIENT_SECET']
-
 CLIENT_ID = 929
 AUTH_OSU = '/auth/osu'
 AUTH_OSU_FINAL = '/auth/osu/redirect'
+CLIENT_SECRET = os.environ['OSU_CLIENT_SECRET']
+
+app = Flask(__name__)
 
 
 @app.route('/')
