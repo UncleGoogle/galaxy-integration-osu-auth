@@ -4,7 +4,7 @@ import json
 import urllib
 
 import requests
-from flask import Flask, redirect, request, url_for, Response
+from flask import Flask, redirect, request, url_for, jsonify
 
 
 CLIENT_ID = 929
@@ -50,8 +50,7 @@ def auth_osu_refresh():
         grant_type='refresh_token',
         refresh_token=tkn
     )
-    return Response(json.dumps(new_tokens), mimetype='application/json')
-
+    return jsonify(new_tokens)
 
 
 def osu_auth_token(**custom):
