@@ -8,9 +8,6 @@ from flask import Flask, redirect, request, url_for
 
 
 CLIENT_ID = 929
-AUTH_OSU = '/auth/osu'
-AUTH_OSU_FINAL = '/auth/osu/redirect'
-AUTH_OSU_REFRESH = '/auth/osu/refresh'
 CLIENT_SECRET = os.environ['OSU_CLIENT_SECRET']
 
 
@@ -22,13 +19,13 @@ def root():
     return 'This host serves for GOG Galaxy plugins authentication'
 
 
-@app.route(AUTH_OSU_FINAL)
+@app.route('/auth/osu/redirect')
 def auth_osu_final():
     assert request.args.get('refresh_token')
     return "Finish. GOG Galaxy browser window should be closed"
 
 
-@app.route(AUTH_OSU)
+@app.route('/auth/osu')
 def auth_osu():
     code = request.args.get('code')
     if code is None:
@@ -37,16 +34,16 @@ def auth_osu():
         auth_params = osu_auth_token(
             grant_type='authorization_code',
             code=code,
-            redirect_uri=request.host_url.strip('/') + AUTH_OSU
+            redirect_uri=request.base_url
         )
     except Exception as e:
         return 'Error: ' + repr(e)
     return redirect(url_for('auth_osu_final', **auth_params))
 
 
-@app.route(AUTH_OSU_REFRESH)
+@app.route('/auth/osu/refresh', methods = ['POST'])
 def auth_osu_refresh():
-    tkn = request.args.get('refresh_token')
+    tkn = request.form.get('refresh_token')
     if tkn is None:
         return 'Error: No `refresh_token` received!'
     return osu_auth_token(
