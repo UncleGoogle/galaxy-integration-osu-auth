@@ -6,12 +6,21 @@ import urllib
 import requests
 from flask import Flask, redirect, request, url_for, jsonify
 
+from exceptions import HttpError
+
 
 CLIENT_ID = 929
 CLIENT_SECRET = os.environ['OSU_CLIENT_SECRET']
 
 
 app = Flask(__name__)
+
+
+@app.errorhandler(HttpError)
+def handle_custom_error(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
 
 
 @app.route('/')
@@ -46,11 +55,15 @@ def auth_osu_refresh():
     tkn = request.form.get('refresh_token')
     if tkn is None:
         return 'Error: No `refresh_token` received!'
-    new_tokens = osu_auth_token(
-        grant_type='refresh_token',
-        refresh_token=tkn
-    )
-    return jsonify(new_tokens)
+    try:
+        new_tokens = osu_auth_token(
+            grant_type='refresh_token',
+            refresh_token=tkn
+        )
+    except Exception as e:
+        raise HttpError(str(e))
+    else:
+        return jsonify(new_tokens)
 
 
 def osu_auth_token(**custom):
