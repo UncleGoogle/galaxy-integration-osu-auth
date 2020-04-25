@@ -52,9 +52,9 @@ def auth_osu():
 
 @app.route('/auth/osu/refresh', methods = ['POST'])
 def auth_osu_refresh():
-    tkn = request.form.get('refresh_token')
+    tkn = request.json.get('refresh_token')
     if tkn is None:
-        return 'Error: No `refresh_token` received!'
+        raise HttpError('Error: No `refresh_token` received!')
     try:
         new_tokens = osu_auth_token(
             grant_type='refresh_token',
