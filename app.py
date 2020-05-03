@@ -60,8 +60,10 @@ def auth_osu_refresh():
             grant_type='refresh_token',
             refresh_token=tkn
         )
+    except requests.HTTPError as e:
+        raise HttpError(str(e), status_code=403)
     except Exception as e:
-        raise HttpError(str(e))
+        raise HttpError(repr(e), status_code=500)
     else:
         return jsonify(new_tokens)
 
