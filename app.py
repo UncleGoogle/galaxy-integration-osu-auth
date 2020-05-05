@@ -1,4 +1,5 @@
 import os
+import logging
 import pathlib
 import json
 import urllib
@@ -63,6 +64,7 @@ def auth_osu_refresh():
     except requests.HTTPError as e:
         raise HttpError(str(e), status_code=403)
     except Exception as e:
+        logging.exception(e)
         raise HttpError(repr(e), status_code=500)
     else:
         return jsonify(new_tokens)
