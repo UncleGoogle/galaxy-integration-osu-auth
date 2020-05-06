@@ -62,7 +62,7 @@ def auth_osu_refresh():
             refresh_token=tkn
         )
     except requests.HTTPError as e:
-        raise HttpError(str(e), status_code=403)
+        raise HttpError(str(e), status_code=e.response.status_code)
     except Exception as e:
         logging.exception(e)
         raise HttpError(repr(e), status_code=500)
