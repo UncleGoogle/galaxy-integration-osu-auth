@@ -8,6 +8,4 @@ class HttpError(Exception):
         self.payload = {'message': message}
 
     def to_dict(self):
-        rv = {}
-        rv['message'] = self.message
-        return rv
+        return self.payload
